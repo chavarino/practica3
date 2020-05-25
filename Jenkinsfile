@@ -1,10 +1,28 @@
-podTemplate(label: BUILD_TAG, containers: [containerTemplate(name: 'maven', image: 'maven', command: 'sleep', args: 'infinity')]) {
-  node(BUILD_TAG) {
-    checkout scm
-    container('maven') {
-      sh 'mvn install'
-      sh 'mvn -B -ntp -Dmaven.test.failure.ignore verify'
+pipeline {
+    agent any
+    tools {
+        maven 'Maven 3.6.0'
+        jdk 'jdk8'
     }
-    junit '**/target/surefire-reports/TEST-*.xml'
-  }
+    stages {
+        stage ('Initialize') {
+            steps {
+                sh '''
+                    echo "PATH = ${PATH}"
+                    echo "M2_HOME = ${M2_HOME}"
+                '''
+            }
+        }
+
+        stage ('Build') {
+            steps {
+                sh 'mvn -Dmaven.test.failure.ignore=true install' 
+            }
+            post {
+                success {
+                    junit 'target/surefire-reports/**/*.xml' 
+                }
+            }
+        }
+    }
 }
