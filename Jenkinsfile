@@ -1,27 +1,28 @@
 pipeline {
-  agent {
-    kubernetes {
-      label BUILD_TAG
-      containerTemplate {
-        name 'maven'
-        image 'maven'
-        command 'sleep'
-        args 'infinity'
-      }
+    agent any
+    tools {
+        maven 'Maven'
+        jdk 'JDK8'
     }
-  }
-  stages {
-    stage('Run') {
-      steps {
-        container('maven') {
-          sh 'mvn -B -ntp -Dmaven.test.failure.ignore verify'
+    stages {
+        stage ('Initialize') {
+            steps {
+                sh '''
+                    echo "PATH = ${PATH}"
+                    echo "M2_HOME = ${M2_HOME}"
+                '''
+            }
         }
-      }
+
+        stage ('Build') {
+            steps {
+                sh 'mvn -Dmaven.test.failure.ignore verify' 
+            }
+            post {
+                success {
+                    junit '**/target/surefire-reports/TEST-*.xml' 
+                }
+            }
+        }
     }
-  }
-  post {
-    success {
-      junit '**/target/surefire-reports/TEST-*.xml'
-    }
-  }
 }
